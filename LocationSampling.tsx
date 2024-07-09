@@ -16,12 +16,20 @@ import RNFS from "react-native-fs";
 import GetLocation from "react-native-get-location";
 
 const LocationSampling = ({ mode }) => {
-  const { ScreenStateModule, LocationModule } = NativeModules;
+  const { ScreenStateModule, LocationModule, ForegroundServiceModule  } = NativeModules;
 
   const [currentLocation, setCurrentLocation] = useState(null);
   const [isSampling, setIsSampling] = useState(false);
   const [locationData, setLocationData] = useState([]);
-  const [isLocked, setIsLocked] = useState<boolean | null>(null);
+
+  // Start foreground service
+  useEffect(() => {
+      ForegroundServiceModule.startForegroundService('Starting location updates...');
+
+      return () => {
+       ForegroundServiceModule.stopForegroundService();
+      };
+  }, []);
 
   // Import the existing location data
   useEffect(() => {
@@ -87,39 +95,33 @@ const LocationSampling = ({ mode }) => {
       try {
         let location = {};
         if (mode === "react-native-get-location") {
-          console.log("react-native-get-location");
+        console.log("react-native-get-location")
           const { latitude, longitude } = await GetLocation.getCurrentPosition({
             enableHighAccuracy: true,
             timeout: 15000,
           });
           location = { latitude, longitude };
         } else if (mode === "native Android") {
-          console.log("native Android");
+        console.log("native Android")
           const { latitude, longitude } =
             await LocationModule.getCurrentLocation();
           location = { latitude, longitude };
-          console.log("native Android", location);
         }
         if (!Object.keys(location || {})?.length) {
           console.log("failed to get location coordinates");
           return;
         }
-        console.log("success to fetch location", location);
         setCurrentLocation(location);
+
         const locked = await ScreenStateModule.isScreenLocked();
-        setIsLocked(locked);
 
         const newSample = {
           location,
           timestamp: getCurrentDate(),
-          displayState:
-            locked === null ? "Loading..." : isLocked ? "Locked" : "Unlocked",
-          mode,
+          displayState: locked ? 'Locked' : 'Unlock',
+          method: mode,
         };
-
-        const updatedLocationData = [newSample, ...locationData];
         setLocationData(prevData => [newSample, ...prevData]);
-        saveDataToFile(updatedLocationData);
       } catch (error) {
         console.error("Error fetching location:", error);
       }
@@ -128,17 +130,20 @@ const LocationSampling = ({ mode }) => {
     return () => clearInterval(intervalId);
   }, [mode]);
 
+	useEffect(() => {
+	    saveDataToFile();
+	}, [locationData])
+
   const toggleSampling = () => {
     setIsSampling((prevState) => !prevState);
   };
 
-  const saveDataToFile = async (updatedLocationData) => {
+  const saveDataToFile = async () => {
     const filePath = `${RNFS.DocumentDirectoryPath}/location_data.json`;
-    const jsonData = JSON.stringify(updatedLocationData, null, 2);
+    const jsonData = JSON.stringify(locationData, null, 2);
 
     try {
       await RNFS.writeFile(filePath, jsonData, "utf8");
-      console.log("Data saved to file:", filePath);
     } catch (error) {
       console.error("Error saving data:", error);
     }

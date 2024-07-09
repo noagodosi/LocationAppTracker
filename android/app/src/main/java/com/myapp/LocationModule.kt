@@ -9,11 +9,6 @@ import android.os.Bundle
 import com.facebook.react.ReactPackage
 import com.facebook.react.bridge.*
 import com.facebook.react.uimanager.ViewManager
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.suspendCancellableCoroutine
-import android.util.Log
 
 class LocationModule : ReactPackage {
 
@@ -67,12 +62,12 @@ class LocationModule : ReactPackage {
             // Handle location provider status changes if needed
         }
 
-        override fun onProviderEnabled(provider: String) {
-            // Handle provider enabled
-        }
-
-        override fun onProviderDisabled(provider: String) {
-            // Handle provider disabled
-        }
+//        override fun onProviderEnabled(provider: String) {
+//            // Handle provider enabled
+//        }
+//
+//        override fun onProviderDisabled(provider: String) {
+//            // Handle provider disabled
+//        }
     }
 }

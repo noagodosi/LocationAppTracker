@@ -8,7 +8,6 @@ import com.facebook.react.bridge.ReactContextBaseJavaModule
 import com.facebook.react.bridge.ReactMethod
 import com.facebook.react.bridge.Promise
 import com.facebook.react.uimanager.ViewManager
-import java.util.*
 
 class ScreenStateModule : ReactPackage {
 

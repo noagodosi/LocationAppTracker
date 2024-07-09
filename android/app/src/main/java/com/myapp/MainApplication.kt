@@ -1,13 +1,10 @@
 package com.myapp
-import com.myapp.ScreenStateModule
-import com.myapp.LocationModule
+
 import android.app.Application
 import com.facebook.react.PackageList
 import com.facebook.react.ReactApplication
 import com.facebook.react.ReactNativeHost
 import com.facebook.react.ReactPackage
-import com.facebook.react.bridge.ReactApplicationContext
-import com.facebook.react.shell.MainReactPackage
 import com.facebook.soloader.SoLoader
 
 class MainApplication : Application(), ReactApplication {
@@ -18,6 +15,7 @@ class MainApplication : Application(), ReactApplication {
                 val packages = PackageList(this).packages.toMutableList()
                 packages.add(ScreenStateModule())
                 packages.add(LocationModule())
+                packages.add(ForegroundServiceModule())
                 return packages
             }
 
