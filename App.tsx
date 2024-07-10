@@ -1,10 +1,3 @@
-/**
- * Sample React Native App
- * https://github.com/facebook/react-native
- *
- * @format
- */
-
 import React, { useState } from "react";
 import type { PropsWithChildren } from "react";
 import {
@@ -20,7 +13,6 @@ import {
   Switch,
 } from "react-native";
 
-import MenuBar from "./MenuBar";
 import LocationSampling from "./LocationSampling";
 
 const App = () => {
@@ -54,7 +46,6 @@ const App = () => {
         </View>
       </View>
       <View style={styles.menu}>
-        <MenuBar />
       </View>
     </SafeAreaView>
   );
@@ -77,7 +68,7 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     fontSize: 24,
     color: "#478CCF",
-    textAlign: "center"
+    textAlign: "center",
   },
   text: {
     textAlign: "center",

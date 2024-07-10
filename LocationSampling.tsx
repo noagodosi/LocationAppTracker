@@ -11,24 +11,101 @@ import {
   ScrollView,
   NativeModules,
 } from "react-native";
-import { check, request } from "@react-native-community/permissions";
 import RNFS from "react-native-fs";
 import GetLocation from "react-native-get-location";
 
 const LocationSampling = ({ mode }) => {
-  const { ScreenStateModule, LocationModule, ForegroundServiceModule  } = NativeModules;
-
-  const [currentLocation, setCurrentLocation] = useState(null);
-  const [isSampling, setIsSampling] = useState(false);
+  const { ScreenStateModule, LocationModule, ForegroundServiceModule } =
+    NativeModules;
+  const [currentLocation, setCurrentLocation] = useState("null");
+  const [isVisible, setIsVisible] = useState(false);
   const [locationData, setLocationData] = useState([]);
-
-  // Start foreground service
+console.log("LocationSampling render")
+  // Request permissions
   useEffect(() => {
-      ForegroundServiceModule.startForegroundService('Starting location updates...');
+    const requestPermissions = async () => {
+      try {
+        // Request location permission
+        const locationGranted = await PermissionsAndroid.request(
+          PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
+          {
+            title: "Location Permission",
+            message:
+              "This app needs access to your location to function properly.",
+            buttonNeutral: "Ask Me Later",
+            buttonNegative: "Cancel",
+            buttonPositive: "OK",
+          }
+        );
 
-      return () => {
-       ForegroundServiceModule.stopForegroundService();
-      };
+        // Request background location permission (for Android 10 and above)
+        if (PermissionsAndroid.PERMISSIONS.ACCESS_BACKGROUND_LOCATION) {
+          const backgroundLocationGranted = await PermissionsAndroid.request(
+            PermissionsAndroid.PERMISSIONS.ACCESS_BACKGROUND_LOCATION,
+            {
+              title: "Background Location Permission",
+              message:
+                "This app needs access to your location in the background.",
+              buttonNeutral: "Ask Me Later",
+              buttonNegative: "Cancel",
+              buttonPositive: "OK",
+            }
+          );
+          if (
+            backgroundLocationGranted === PermissionsAndroid.RESULTS.GRANTED
+          ) {
+            console.log("Background location permission granted");
+          } else {
+            console.log("Background location permission denied");
+          }
+        } else {
+          console.log(
+            "Background location permission not available on this device"
+          );
+        }
+
+        // Request storage permissions
+        const storageGranted = await PermissionsAndroid.request(
+          PermissionsAndroid.PERMISSIONS.WRITE_EXTERNAL_STORAGE,
+          {
+            title: "Storage Permission",
+            message: "This app needs access to storage to save data.",
+            buttonNeutral: "Ask Me Later",
+            buttonNegative: "Cancel",
+            buttonPositive: "OK",
+          }
+        );
+
+        // Check if all permissions are granted
+        if (
+          locationGranted === PermissionsAndroid.RESULTS.GRANTED &&
+          storageGranted === PermissionsAndroid.RESULTS.GRANTED
+        ) {
+          console.log("location service, and storage permissions granted");
+        } else {
+          console.log("One or more permissions denied");
+        }
+      } catch (error) {
+        console.warn("Error requesting permissions:", error);
+      }
+    };
+
+    requestPermissions();
+  }, []);
+
+  useEffect(() => {
+    const startForegroundService = async () => {
+      try {
+         ForegroundServiceModule.startForegroundService("currentLocation");
+         console.log("Foreground service started");
+
+      } catch (error) {
+         console.error("Error starting foreground service:", error);
+      }
+    }
+    startForegroundService();
+
+    return () => ForegroundServiceModule.stopForegroundService();
   }, []);
 
   // Import the existing location data
@@ -46,63 +123,21 @@ const LocationSampling = ({ mode }) => {
     fetchDataFromFile();
   }, []);
 
-  // Request permissions to get the device location
-  useEffect(() => {
-    const requestPermissions = async () => {
-      try {
-        // Request location permission
-        const locationGranted = await PermissionsAndroid.request(
-          PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
-          {
-            title: "Location Permission",
-            message:
-              "This app needs access to your location to function properly.",
-            buttonNeutral: "Ask Me Later",
-            buttonNegative: "Cancel",
-            buttonPositive: "OK",
-          }
-        );
-        // Request storage permissions
-        const storageGranted = await PermissionsAndroid.request(
-          PermissionsAndroid.PERMISSIONS.WRITE_EXTERNAL_STORAGE,
-          {
-            title: "Storage Permission",
-            message: "This app needs access to storage to save data.",
-            buttonNeutral: "Ask Me Later",
-            buttonNegative: "Cancel",
-            buttonPositive: "OK",
-          }
-        );
-        // Check if both permissions are granted
-        if (
-          locationGranted === PermissionsAndroid.RESULTS.GRANTED &&
-          storageGranted === PermissionsAndroid.RESULTS.GRANTED
-        ) {
-          console.log("Location and storage permissions granted");
-        } else {
-          console.log("Location or storage permission denied");
-        }
-      } catch (error) {
-        console.warn("Error requesting permissions:", error);
-      }
-    };
-    requestPermissions();
-  }, []);
-
   // Sample user location each 5 second
   useEffect(() => {
     const intervalId = setInterval(async () => {
+      console.log("app is running");
       try {
         let location = {};
         if (mode === "react-native-get-location") {
-        console.log("react-native-get-location")
+          console.log("react-native-get-location");
           const { latitude, longitude } = await GetLocation.getCurrentPosition({
             enableHighAccuracy: true,
             timeout: 15000,
           });
           location = { latitude, longitude };
         } else if (mode === "native Android") {
-        console.log("native Android")
+          console.log("native Android");
           const { latitude, longitude } =
             await LocationModule.getCurrentLocation();
           location = { latitude, longitude };
@@ -114,14 +149,15 @@ const LocationSampling = ({ mode }) => {
         setCurrentLocation(location);
 
         const locked = await ScreenStateModule.isScreenLocked();
+        console.log(locked ? "Locked" : "Unlock");
 
         const newSample = {
           location,
           timestamp: getCurrentDate(),
-          displayState: locked ? 'Locked' : 'Unlock',
+          displayState: locked ? "Locked" : "Unlock",
           method: mode,
         };
-        setLocationData(prevData => [newSample, ...prevData]);
+        setLocationData((prevData) => [newSample, ...prevData]);
       } catch (error) {
         console.error("Error fetching location:", error);
       }
@@ -130,12 +166,13 @@ const LocationSampling = ({ mode }) => {
     return () => clearInterval(intervalId);
   }, [mode]);
 
-	useEffect(() => {
-	    saveDataToFile();
-	}, [locationData])
+  //call saveDataFile function when location update
+  useEffect(() => {
+    saveDataToFile();
+  }, [locationData]);
 
-  const toggleSampling = () => {
-    setIsSampling((prevState) => !prevState);
+  const toggleVisible = () => {
+    setIsVisible((prevState) => !prevState);
   };
 
   const saveDataToFile = async () => {
@@ -144,6 +181,7 @@ const LocationSampling = ({ mode }) => {
 
     try {
       await RNFS.writeFile(filePath, jsonData, "utf8");
+	  console.log("saveDataToFile")
     } catch (error) {
       console.error("Error saving data:", error);
     }
@@ -171,13 +209,13 @@ const LocationSampling = ({ mode }) => {
         <Text style={styles.subtitle}>Please select mode</Text>
         <View style={styles.switchContainer}>
           <Text style={styles.text}>
-            {isSampling ? "Stop Sampling" : "Start Sampling"}
+            {isVisible ? "Hide Location" : "Show Location"}
           </Text>
           <Switch
             trackColor={{ false: "gray", true: "#81b0ff" }}
-            thumbColor={isSampling ? "#EEEDEB" : "#f4f3f4"}
-            onValueChange={toggleSampling}
-            value={isSampling}
+            thumbColor={isVisible ? "#EEEDEB" : "#f4f3f4"}
+            onValueChange={toggleVisible}
+            value={isVisible}
             style={{
               transform: [{ scaleX: 1.3 }, { scaleY: 1.3 }],
               marginTop: 20,
@@ -186,12 +224,14 @@ const LocationSampling = ({ mode }) => {
           />
         </View>
 
-        <Text style={styles.textLocation}>
-          Current Location:{" "}
-          {currentLocation
-            ? `${currentLocation.latitude}, ${currentLocation.longitude}`
-            : "Unknown"}
-        </Text>
+        {isVisible && (
+          <Text style={styles.textLocation}>
+            Current Location:{" "}
+            {currentLocation
+              ? `${currentLocation.latitude}, ${currentLocation.longitude}`
+              : "Unknown"}
+          </Text>
+        )}
       </ScrollView>
     </SafeAreaView>
   );

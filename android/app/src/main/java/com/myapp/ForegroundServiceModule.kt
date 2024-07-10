@@ -30,15 +30,16 @@ class ForegroundServiceModule : ReactPackage {
 
         @ReactMethod
         fun startForegroundService(inputExtra: String) {
-            val serviceIntent =  Intent(reactContext, ForegroundService::class.java)
+            val serviceIntent =  Intent(reactContext, ForegroundService::class.java).apply{ action = ForegroundService.ACTION_START }
             serviceIntent.putExtra("inputExtra", inputExtra)
             reactContext.startService(serviceIntent)
         }
 
+
         @ReactMethod
         fun stopForegroundService() {
-            val serviceIntent = Intent(reactContext, ForegroundService::class.java)
-            reactContext.stopService(serviceIntent)
+            val serviceIntent = Intent(reactContext, ForegroundService::class.java).apply { action= ForegroundService.ACTION_STOP }
+            reactContext.startService(serviceIntent)
         }
     }
 }
