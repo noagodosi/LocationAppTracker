@@ -2,25 +2,26 @@ import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
-  TouchableOpacity,
   StyleSheet,
   Switch,
   PermissionsAndroid,
-  Platform,
   SafeAreaView,
   ScrollView,
   NativeModules,
 } from "react-native";
 import RNFS from "react-native-fs";
 import GetLocation from "react-native-get-location";
+import { TLocationData, TLocation, ModeEnum, StateEnum } from "./types";
 
-const LocationSampling = ({ mode }) => {
-  const { ScreenStateModule, LocationModule, ForegroundServiceModule } =
-    NativeModules;
-  const [currentLocation, setCurrentLocation] = useState("null");
-  const [isVisible, setIsVisible] = useState(false);
-  const [locationData, setLocationData] = useState([]);
-console.log("LocationSampling render")
+const LocationSampling = ({ mode }: { mode: ModeEnum }) => {
+  const {
+    ScreenStateModule, LocationModule, ForegroundServiceModule
+  } = NativeModules;
+
+  const [currentLocation, setCurrentLocation] = useState<TLocation | null>(null);
+  const [isVisible, setIsVisible] = useState<boolean>(false);
+  const [locationData, setLocationData] = useState<TLocationData[]>([]);
+
   // Request permissions
   useEffect(() => {
     const requestPermissions = async () => {
@@ -96,11 +97,11 @@ console.log("LocationSampling render")
   useEffect(() => {
     const startForegroundService = async () => {
       try {
-         ForegroundServiceModule.startForegroundService("currentLocation");
-         console.log("Foreground service started");
+        ForegroundServiceModule.startForegroundService("currentLocation");
+        console.log("Foreground service started");
 
       } catch (error) {
-         console.error("Error starting foreground service:", error);
+        console.error("Error starting foreground service:", error);
       }
     }
     startForegroundService();
@@ -126,18 +127,15 @@ console.log("LocationSampling render")
   // Sample user location each 5 second
   useEffect(() => {
     const intervalId = setInterval(async () => {
-      console.log("app is running");
       try {
-        let location = {};
-        if (mode === "react-native-get-location") {
-          console.log("react-native-get-location");
+        let location: Partial<TLocation> = {};
+        if (mode === ModeEnum.REACT_NATIVE) {
           const { latitude, longitude } = await GetLocation.getCurrentPosition({
             enableHighAccuracy: true,
             timeout: 15000,
           });
           location = { latitude, longitude };
-        } else if (mode === "native Android") {
-          console.log("native Android");
+        } else if (mode === ModeEnum.NATIVE_ANDROID) {
           const { latitude, longitude } =
             await LocationModule.getCurrentLocation();
           location = { latitude, longitude };
@@ -146,15 +144,14 @@ console.log("LocationSampling render")
           console.log("failed to get location coordinates");
           return;
         }
-        setCurrentLocation(location);
+        setCurrentLocation(location as TLocation);
 
         const locked = await ScreenStateModule.isScreenLocked();
-        console.log(locked ? "Locked" : "Unlock");
 
-        const newSample = {
-          location,
+        const newSample: TLocationData = {
+          location: location as TLocation,
           timestamp: getCurrentDate(),
-          displayState: locked ? "Locked" : "Unlock",
+          displayState: locked ? StateEnum.LOCKED : StateEnum.UNLOCKED,
           method: mode,
         };
         setLocationData((prevData) => [newSample, ...prevData]);
@@ -181,7 +178,7 @@ console.log("LocationSampling render")
 
     try {
       await RNFS.writeFile(filePath, jsonData, "utf8");
-	  console.log("saveDataToFile")
+      console.log("success save data to file from method", mode)
     } catch (error) {
       console.error("Error saving data:", error);
     }
@@ -226,14 +223,14 @@ console.log("LocationSampling render")
 
         {isVisible && (
           <Text style={styles.textLocation}>
-            Current Location:{" "}
-            {currentLocation
-              ? `${currentLocation.latitude}, ${currentLocation.longitude}`
+            Current Location:
+            {!!currentLocation?.latitude && !!currentLocation?.longitude
+              ? `${currentLocation?.latitude}, ${currentLocation.longitude}`
               : "Unknown"}
           </Text>
         )}
       </ScrollView>
-    </SafeAreaView>
+    </SafeAreaView >
   );
 };
 

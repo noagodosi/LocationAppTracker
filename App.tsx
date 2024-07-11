@@ -1,24 +1,20 @@
 import React, { useState } from "react";
-import type { PropsWithChildren } from "react";
 import {
   SafeAreaView,
-  ScrollView,
-  StatusBar,
   StyleSheet,
   Text,
-  Button,
-  Alert,
   TouchableOpacity,
   View,
-  Switch,
 } from "react-native";
 
-import LocationSampling from "./LocationSampling";
+import LocationSampling from "./frontend/LocationSampling";
+import { ModeEnum } from "./frontend/types";
+import { LocationModes } from "./frontend/consts";
 
 const App = () => {
-  const [selectedOption, setSelectedOption] = useState("native Android");
+  const [selectedOption, setSelectedOption] = useState<ModeEnum>(ModeEnum.NATIVE_ANDROID);
 
-  const locationMethod = (name: string) => (
+  const locationMethod = (name: ModeEnum) => (
     <TouchableOpacity
       style={[styles.button, selectedOption === name && styles.selectedButton]}
       onPress={() => setSelectedOption(name)}
@@ -41,8 +37,8 @@ const App = () => {
         <LocationSampling mode={selectedOption} />
         <Text style={styles.text}>Method : {selectedOption}</Text>
         <View style={styles.buttonsContainer}>
-          {locationMethod("native Android")}
-          {locationMethod("react-native-get-location")}
+          {locationMethod(LocationModes.NativeAndroid as ModeEnum)}
+          {locationMethod(LocationModes.ReactNativeGetLocation as ModeEnum)}
         </View>
       </View>
       <View style={styles.menu}>
