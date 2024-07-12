@@ -62,12 +62,5 @@ class LocationModule : ReactPackage {
             // Handle location provider status changes if needed
         }
 
-//        override fun onProviderEnabled(provider: String) {
-//            // Handle provider enabled
-//        }
-//
-//        override fun onProviderDisabled(provider: String) {
-//            // Handle provider disabled
-//        }
     }
 }

@@ -7,6 +7,7 @@ import android.app.Service
 import android.content.Intent
 import android.os.Build
 import android.os.IBinder
+import android.util.Log
 import androidx.core.app.NotificationCompat
 
 class ForegroundService : Service() {
@@ -25,6 +26,8 @@ class ForegroundService : Service() {
             ACTION_START -> start(input)
             ACTION_STOP -> stop()
         }
+        Log.d("ForegroundService", "start - ForegroundService")
+
         return super.onStartCommand(intent, flags, startId)
     }
 
@@ -40,13 +43,17 @@ class ForegroundService : Service() {
 
         startForeground(1, notification.build())
 
-        val updateNotification = notification.setContentText("updated")
-        notificationManager?.notify(1, updateNotification.build());
+//        val updateNotification = notification.setContentText("updated")
+//        notificationManager?.notify(1, updateNotification.build());
     }
 
     private fun stop() {
         stopForeground(false)
-//        stopSelf()
+        stopSelf()
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
     }
 
     private fun createNotificationChannel() :NotificationManager? {

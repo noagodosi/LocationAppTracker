@@ -6,10 +6,8 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-
 import LocationSampling from "./frontend/LocationSampling";
 import { ModeEnum } from "./frontend/types";
-import { LocationModes } from "./frontend/consts";
 
 const App = () => {
   const [selectedOption, setSelectedOption] = useState<ModeEnum>(ModeEnum.NATIVE_ANDROID);
@@ -37,8 +35,8 @@ const App = () => {
         <LocationSampling mode={selectedOption} />
         <Text style={styles.text}>Method : {selectedOption}</Text>
         <View style={styles.buttonsContainer}>
-          {locationMethod(LocationModes.NativeAndroid as ModeEnum)}
-          {locationMethod(LocationModes.ReactNativeGetLocation as ModeEnum)}
+          {locationMethod(ModeEnum.NATIVE_ANDROID)}
+          {locationMethod(ModeEnum.REACT_NATIVE)}
         </View>
       </View>
       <View style={styles.menu}>

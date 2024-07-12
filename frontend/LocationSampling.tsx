@@ -5,8 +5,6 @@ import {
   StyleSheet,
   Switch,
   PermissionsAndroid,
-  SafeAreaView,
-  ScrollView,
   NativeModules,
 } from "react-native";
 import RNFS from "react-native-fs";
@@ -27,16 +25,9 @@ const LocationSampling = ({ mode }: { mode: ModeEnum }) => {
     const requestPermissions = async () => {
       try {
         // Request location permission
-        const locationGranted = await PermissionsAndroid.request(
-          PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
-          {
-            title: "Location Permission",
-            message:
-              "This app needs access to your location to function properly.",
-            buttonNeutral: "Ask Me Later",
-            buttonNegative: "Cancel",
-            buttonPositive: "OK",
-          }
+        const locationGranted = await PermissionsAndroid.requestMultiple(
+          [PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
+          PermissionsAndroid.PERMISSIONS.ACCESS_COARSE_LOCATION]
         );
 
         // Request background location permission (for Android 10 and above)
@@ -79,7 +70,8 @@ const LocationSampling = ({ mode }: { mode: ModeEnum }) => {
 
         // Check if all permissions are granted
         if (
-          locationGranted === PermissionsAndroid.RESULTS.GRANTED &&
+          locationGranted['android.permission.ACCESS_FINE_LOCATION']  === PermissionsAndroid.RESULTS.GRANTED &&
+          locationGranted['android.permission.ACCESS_COARSE_LOCATION']  === PermissionsAndroid.RESULTS.GRANTED &&
           storageGranted === PermissionsAndroid.RESULTS.GRANTED
         ) {
           console.log("location service, and storage permissions granted");
@@ -97,7 +89,7 @@ const LocationSampling = ({ mode }: { mode: ModeEnum }) => {
   useEffect(() => {
     const startForegroundService = async () => {
       try {
-        ForegroundServiceModule.startForegroundService("currentLocation");
+        await ForegroundServiceModule.startForegroundService("currentLocation");
         console.log("Foreground service started");
 
       } catch (error) {
@@ -114,9 +106,11 @@ const LocationSampling = ({ mode }: { mode: ModeEnum }) => {
     const fetchDataFromFile = async () => {
       try {
         const filePath = `${RNFS.DocumentDirectoryPath}/location_data.json`;
-        const fileContent = await RNFS.readFile(filePath, "utf8");
-        const parsedData = JSON.parse(fileContent);
-        setLocationData(parsedData);
+        if(filePath){
+           const fileContent = await RNFS.readFile(filePath, "utf8");
+           const parsedData = JSON.parse(fileContent);
+           setLocationData(parsedData);
+        }
       } catch (error) {
         console.error("Error reading data:", error);
       }
@@ -132,7 +126,7 @@ const LocationSampling = ({ mode }: { mode: ModeEnum }) => {
         if (mode === ModeEnum.REACT_NATIVE) {
           const { latitude, longitude } = await GetLocation.getCurrentPosition({
             enableHighAccuracy: true,
-            timeout: 15000,
+            timeout: 20000,
           });
           location = { latitude, longitude };
         } else if (mode === ModeEnum.NATIVE_ANDROID) {
@@ -152,8 +146,8 @@ const LocationSampling = ({ mode }: { mode: ModeEnum }) => {
           location: location as TLocation,
           timestamp: getCurrentDate(),
           displayState: locked ? StateEnum.LOCKED : StateEnum.UNLOCKED,
-          method: mode,
         };
+
         setLocationData((prevData) => [newSample, ...prevData]);
       } catch (error) {
         console.error("Error fetching location:", error);
@@ -168,9 +162,9 @@ const LocationSampling = ({ mode }: { mode: ModeEnum }) => {
     saveDataToFile();
   }, [locationData]);
 
-  const toggleVisible = () => {
-    setIsVisible((prevState) => !prevState);
-  };
+   const toggleVisible = () => {
+     setIsVisible((prevState) => !prevState);
+   };
 
   const saveDataToFile = async () => {
     const filePath = `${RNFS.DocumentDirectoryPath}/location_data.json`;
@@ -201,10 +195,9 @@ const LocationSampling = ({ mode }: { mode: ModeEnum }) => {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <ScrollView>
+    <View style={styles.container}>
         <Text style={styles.subtitle}>Please select mode</Text>
-        <View style={styles.switchContainer}>
+         <View style={styles.switchContainer}>
           <Text style={styles.text}>
             {isVisible ? "Hide Location" : "Show Location"}
           </Text>
@@ -221,16 +214,15 @@ const LocationSampling = ({ mode }: { mode: ModeEnum }) => {
           />
         </View>
 
-        {isVisible && (
+         {isVisible && (
           <Text style={styles.textLocation}>
             Current Location:
             {!!currentLocation?.latitude && !!currentLocation?.longitude
               ? `${currentLocation?.latitude}, ${currentLocation.longitude}`
               : "Unknown"}
           </Text>
-        )}
-      </ScrollView>
-    </SafeAreaView >
+        )} 
+    </View >
   );
 };
 
