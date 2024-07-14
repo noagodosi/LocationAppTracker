@@ -7,7 +7,7 @@ export type TLocationData = {
     location: TLocation;
     timestamp: TTimestamp;
     displayState: StateEnum;
-    method: ModeEnum;
+    // method: ModeEnum;
 }
 
 export enum ModeEnum {
